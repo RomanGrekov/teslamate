@@ -1,0 +1,11 @@
+[teslamate]
+${ec2-dns} ansible_host=${ec2-ip} ansible_user=${ec2-user} ansible_ssh_private_key_file=${ec2-priv-key}
+
+[teslamate:vars]
+REGION=${aws_region}
+letsencrypt_email=${admin_email}
+domain_name=${domain}
+teslamate_subdomain=${teslamate_subdomain}
+grafana_subdomain=${grafana_subdomain}
+basic_auth_user=${basic_auth_user}
+basic_auth_password=${basic_auth_password}

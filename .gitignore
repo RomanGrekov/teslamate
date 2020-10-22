@@ -1,0 +1,6 @@
+terraform/.terraform
+envs
+!*/envs/example.tfvars
+for_alb
+inventory
+terraform.tfstate*

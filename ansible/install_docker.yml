@@ -1,0 +1,79 @@
+---
+- name: Install required system packages
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  with_items:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - software-properties-common
+  tags:
+    - docker
+
+- name: Add Docker GPG apt Key
+  become: true
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  tags:
+    - docker
+
+# sudo apt-key fingerprint 0EBFCD88
+- name: Verify that we have the key with the fingerprint
+  apt_key:
+    id: 0EBFCD88
+    state: present
+  tags:
+    - docker
+
+- name: Add Docker Repository
+  become: true
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu bionic stable
+    state: present
+  tags:
+    - docker
+
+- name: Update apt and install docker-ce
+  become: true
+  apt:
+    update_cache: yes
+    name: docker-ce
+    state: latest
+
+- name: Install Docker Module for Python
+  become: true
+  pip:
+    name: docker
+
+# sudo apt-get install docker-compose=1.21.*
+- name: Install docker-compose
+  become: true
+  apt:
+    name: docker-compose
+    state: latest
+    update_cache: yes
+  tags:
+    - docker
+
+# If you use something like `docker swarm mode` it's
+# very common to have dangling containers around.
+# By setting a cron job to clean thing ups every N
+# hours we make sure that dangling containers don't
+# stay around for too long.
+- name: Set periodic docker system prune
+  cron:
+    name: 'docker-prune'
+    minute: '0'
+    hour: '*/2'
+    job: 'docker container prune -f'
+
+- name: 'add users to docker group'
+  become: true
+  user:
+    name: 'ubuntu'
+    groups: 'docker'
+    append: 'yes'

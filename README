@@ -1,0 +1,11 @@
+This project creates minimal environment in AWS to run docker containers for Teslamate project: https://github.com/adriankumpf/teslamate
+Setup:
+1. Install Terraform binary on your PC
+2. Create Amazon AWS account
+3. Create domain in Route53: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/getting-started.html
+4. Clone this project
+5. Create your environment file in teslamate/envs. Use example.tfvars for example
+6. cd teslamate/terraform
+7. terraform apply -var-file=envs/your_env.tfvars
+8. cd ../ansible
+9. ansible-playbook install.yml -i ../terraform/inventory

@@ -1,0 +1,66 @@
+---
+- name: install letsencrypt
+  become: true
+  apt:
+    name: letsencrypt
+    state: latest
+
+- name: create letsencrypt directory
+  become: true
+  file: name=/var/www/letsencrypt state=directory
+
+- name: Remove default nginx config
+  become: true
+  file: name=/etc/nginx/sites-enabled/default state=absent
+
+- name: Install system nginx config
+  become: true
+  template:
+    src: ansible_templates/nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+
+- name: Install nginx site for letsencrypt requests
+  become: true
+  template:
+    src: ansible_templates/nginx-http.j2
+    dest: /etc/nginx/sites-enabled/http
+
+- name: Reload nginx to activate letsencrypt site
+  become: true
+  service: name=nginx state=restarted
+
+- name: Create letsencrypt certificate for teslamate
+  become: true
+  shell: letsencrypt certonly -n --webroot -w /var/www/letsencrypt -m {{ letsencrypt_email }} --agree-tos -d {{ teslamate_subdomain }}.{{ domain_name }}
+  args:
+    creates: /etc/letsencrypt/live/{{ teslamate_subdomain}}.{{ domain_name }}
+
+- name: Create letsencrypt certificate for grafana
+  become: true
+  shell: letsencrypt certonly -n --webroot -w /var/www/letsencrypt -m {{ letsencrypt_email }} --agree-tos -d {{ grafana_subdomain }}.{{ domain_name }}
+  args:
+    creates: /etc/letsencrypt/live/{{ grafana_subdomain}}.{{ domain_name }}
+
+- name: Generate dhparams
+  become: true
+  shell: openssl dhparam -out /etc/nginx/dhparams.pem 2048
+  args:
+    creates: /etc/nginx/dhparams.pem
+
+- name: Reload nginx to activate specified site
+  become: true
+  service: name=nginx state=restarted
+
+- name: Add letsencrypt cronjob for teslamate cert renewal
+  become: true
+  cron:
+    name: letsencrypt_renewal_teslamate
+    special_time: weekly
+    job: letsencrypt --renew certonly -n --webroot -w /var/www/letsencrypt -m {{ letsencrypt_email }} --agree-tos -d {{ teslamate_subdomain }}.{{ domain_name }} && service nginx reload
+
+- name: Add letsencrypt cronjob for grafana cert renewal
+  become: true
+  cron:
+    name: letsencrypt_renewal_grafana
+    special_time: weekly
+    job: letsencrypt --renew certonly -n --webroot -w /var/www/letsencrypt -m {{ letsencrypt_email }} --agree-tos -d {{ grafana_subdomain }}.{{ domain_name }} && service nginx reload

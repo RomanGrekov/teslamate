@@ -1,0 +1,79 @@
+---
+- hosts: teslamate
+  tasks:
+    - name: Upgrade system
+      become: true
+      apt:
+        upgrade: dist
+        update_cache: yes
+
+    - name: Install vim
+      become: true
+      apt:
+        name: vim
+        state: latest
+
+    - name: Install nginx
+      become: true
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Install setuptools(needed to use pip). Needed by docker and letsencrypt installations
+      become: true
+      apt:
+        pkg:
+          - python-setuptools
+          - python3-pip
+          - virtualenv
+        state: latest
+
+    - name: Import docker tasks
+      include_tasks: install_docker.yml
+
+    - name: Copy docker files
+      copy:
+        src: docker
+        dest: /home/ubuntu
+        mode: a+x
+
+    - name: Install libs for creating nginx basic auth pass file
+      become: true
+      pip:
+        name:
+          - passlib
+
+    - name: Create password file for nginx
+      htpasswd:
+        path: /etc/nginx/passwdfile
+        name: '{{ basic_auth_user }}'
+        password: '{{ basic_auth_password }}'
+        owner: root
+        group: www-data
+        mode: 0640
+      become: true
+
+    - name: Import letsencrypt tasks
+      include_tasks: install_letsencrypt.yml
+
+    - name: Install nginx teslamate vhost
+      become: true
+      template:
+        src: ansible_templates/teslamate-vhost.j2
+        dest: /etc/nginx/sites-enabled/teslamate.conf
+
+    - name: Install nginx grafana vhost
+      become: true
+      template:
+        src: ansible_templates/grafana-vhost.j2
+        dest: /etc/nginx/sites-enabled/grafana.conf
+
+    - name: Reload nginx to activate user's sites
+      become: true
+      service: name=nginx state=restarted
+
+    - name: Run docker-compose
+      shell: docker-compose up -d
+      args:
+        chdir: '/home/ubuntu/docker'
+      become: true
