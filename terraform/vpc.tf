@@ -62,4 +62,8 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "nat-gw" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public.id
+  tags = merge(
+    local.common_tags,
+    { Name = local.project_env_name }
+  )
 }
