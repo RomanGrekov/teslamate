@@ -56,7 +56,8 @@ data "aws_ami" "ubuntu" {
 # Main instance
 ########################
 resource "aws_instance" "teslamate" {
-  ami                    = data.aws_ami.ubuntu.id
+  #ami                    = data.aws_ami.ubuntu.id
+  ami                    = "ami-0209a3524a56ed792"
   instance_type          = "t2.micro"
   key_name               = aws_key_pair.sshkey.key_name
   subnet_id              = aws_subnet.public.id

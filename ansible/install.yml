@@ -24,7 +24,7 @@
       apt:
         pkg:
           - python-setuptools
-          - python3-pip
+          - python-pip
           - virtualenv
         state: latest
 
